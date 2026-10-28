@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Ordens de Serviço</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f2edff;
+      --bg-deep: #e8ddff;
+      --card: #ffffff;
+      --ink: #24143f;
+      --muted: #74658d;
+      --line: #e5dcf4;
+      --primary: #5420a8;
+      --primary-dark: #3f167f;
+      --primary-soft: #f0e8ff;
+      --danger: #b4234d;
+      --shadow: 0 12px 34px rgba(69, 35, 122, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(ellipse at 8% 0%, rgba(196, 171, 255, .36), transparent 36rem),
+        linear-gradient(180deg, #f5f0ff 0%, var(--bg) 48%, #f8f5ff 100%);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    header {
+      position: relative;
+      overflow: hidden;
+      color: #fff;
+      padding: 32px 22px 42px;
+      background: linear-gradient(120deg, #35105f 0%, #5420a8 55%, #6e35c4 100%);
+      box-shadow: 0 10px 30px rgba(63, 22, 127, .2);
+    }
+    header::before, header::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      pointer-events: none;
+      background: rgba(255,255,255,.07);
+    }
+    header::before { width: 300px; height: 300px; right: -60px; top: -190px; }
+    header::after { width: 180px; height: 180px; right: 160px; bottom: -140px; }
+    header .wrap, main { max-width: 1120px; margin: auto; position: relative; }
+    .brandline { display:flex; align-items:center; gap:13px; margin-bottom:22px; }
+    .brandmark {
+      display:flex; align-items:center; justify-content:center; width:46px; height:46px;
+      border:1px solid rgba(255,255,255,.23); border-radius:14px;
+      background:rgba(255,255,255,.13); font-size:1.3rem; font-weight:800;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+    }
+    .eyebrow { color:#e0d0ff; font-size:.76rem; text-transform:uppercase; letter-spacing:.16em; font-weight:800; }
+    h1 { margin:0 0 9px; font-size:clamp(1.65rem,3.2vw,2.35rem); letter-spacing:-.035em; line-height:1.15; }
+    header p { margin:0; color:#e8dcff; font-size:1rem; line-height:1.55; max-width:650px; }
+    main { padding:0 20px 44px; margin-top:-19px; z-index:1; }
+    .stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:18px; }
+    .stat, .panel {
+      background:rgba(255,255,255,.94); border:1px solid rgba(218, 205, 241, .95);
+      border-radius:18px; box-shadow:var(--shadow);
+    }
+    .stat { padding:21px 23px; display:flex; align-items:center; gap:16px; min-height:112px; }
+    .stat-icon {
+      flex:0 0 48px; height:48px; display:flex; align-items:center; justify-content:center;
+      border-radius:15px; background:var(--primary-soft); color:var(--primary); font-size:1.35rem;
+    }
+    .stat .label { color:var(--muted); font-size:.88rem; font-weight:650; line-height:1.4; }
+    .stat .value { display:block; font-size:2rem; font-weight:800; letter-spacing:-.04em; margin-top:4px; color:var(--primary); }
+    .panel { padding:25px; margin-bottom:18px; }
+    .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px; }
+    .heading-main { display:flex; align-items:center; gap:12px; }
+    .section-icon {
+      width:42px; height:42px; flex:0 0 42px; border-radius:13px;
+      display:flex; align-items:center; justify-content:center; color:var(--primary);
+      background:var(--primary-soft); font-size:1.15rem;
+    }
+    h2 { font-size:1.12rem; margin:0 0 4px; letter-spacing:-.015em; }
+    .section-subtitle { color:var(--muted); font-size:.88rem; margin:0; line-height:1.5; }
+    .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:17px; }
+    .field { display:flex; flex-direction:column; gap:8px; min-width:0; }
+    .field.full { grid-column:1/-1; }
+    label { font-size:.88rem; font-weight:750; color:#3c2b57; }
+    input, textarea {
+      width:100%; border:1px solid #d8cce9; border-radius:11px; padding:13px 14px;
+      font:inherit; font-size:.96rem; background:#fdfcff; color:var(--ink);
+      transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    input::placeholder, textarea::placeholder { color:#a194b7; }
+    input:hover, textarea:hover { border-color:#b6a0dc; }
+    input:focus, textarea:focus {
+      outline:none; border-color:#7543c2; background:#fff;
+      box-shadow:0 0 0 4px rgba(117,67,194,.13);
+    }
+    textarea { min-height:112px; resize:vertical; line-height:1.5; }
+    .hint { color:var(--muted); font-size:.83rem; margin:13px 0 0; display:flex; gap:7px; align-items:flex-start; line-height:1.45; }
+    .hint::before { content:"◷"; color:var(--primary); font-size:1rem; font-weight:800; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:19px; }
+    button {
+      border:1px solid transparent; border-radius:10px; padding:12px 16px; font:inherit;
+      font-size:.9rem; font-weight:750; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    button:focus-visible { outline:3px solid #c8b0ff; outline-offset:2px; }
+    button:active { transform:translateY(1px); }
+    .primary { background:linear-gradient(135deg,#6128b8,#4b198f); color:#fff; box-shadow:0 5px 13px rgba(84,32,168,.18); }
+    .primary:hover { background:linear-gradient(135deg,#51209e,#3f167f); box-shadow:0 7px 17px rgba(84,32,168,.24); }
+    .secondary { background:#f2ecfc; border-color:#e3d7f7; color:#4d2587; }
+    .secondary:hover { background:#e8dcfb; }
+    .danger { background:#fff0f3; border-color:#f7d2dc; color:var(--danger); }
+    .danger:hover { background:#ffe1e8; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+    .toolbar input { flex:1; min-width:220px; padding-left:42px; background:#fdfcff; }
+    .search-wrap { flex:1; min-width:240px; position:relative; }
+    .search-wrap::before { content:"⌕"; position:absolute; left:15px; top:7px; color:#8063a9; font-size:1.55rem; pointer-events:none; }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+    table { width:100%; border-collapse:collapse; min-width:760px; background:#fff; }
+    th,td { text-align:left; padding:14px 13px; border-bottom:1px solid #eee7f7; vertical-align:top; }
+    th { font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; color:#6f5b8b; background:#f7f2ff; font-weight:800; }
+    td { font-size:.91rem; line-height:1.5; }
+    tbody tr:hover { background:#fcfaff; }
+    tbody tr:last-child td { border-bottom:0; }
+    .os { font-weight:800; color:#4e1e8d; white-space:nowrap; }
+    .date { white-space:nowrap; color:#5d4d72; font-size:.86rem; }
+    .empty { color:var(--muted); padding:28px 12px; text-align:center; line-height:1.5; }
+    .row-actions { display:flex; gap:7px; }
+    .row-actions button { padding:7px 10px; font-size:.8rem; }
+    .notice {
+      background:rgba(246,240,255,.92); border:1px solid #dfd0f6; color:#584274;
+      border-radius:12px; padding:14px 16px; font-size:.88rem; line-height:1.55;
+      display:flex; align-items:flex-start; gap:10px;
+    }
+    .notice::before { content:"ⓘ"; font-size:1.05rem; color:var(--primary); font-weight:800; }
+    footer { color:#8a7a9f; font-size:.8rem; text-align:center; padding:22px 0 0; }
+    @media (max-width:700px) {
+      header { padding:25px 18px 37px; }
+      .brandline { margin-bottom:17px; }
+      .brandmark { width:42px; height:42px; }
+      main { padding:0 12px 28px; }
+      .stats { gap:10px; }
+      .stat { padding:15px 13px; min-height:100px; gap:10px; border-radius:15px; }
+      .stat-icon { flex-basis:38px; height:38px; border-radius:12px; font-size:1.1rem; }
+      .stat .label { font-size:.77rem; }
+      .stat .value { font-size:1.65rem; }
+      .panel { padding:18px 15px; border-radius:15px; }
+      .section-heading { margin-bottom:17px; }
+      .section-icon { width:38px; height:38px; flex-basis:38px; }
+      .form-grid { grid-template-columns:1fr; gap:14px; }
+      .field.full { grid-column:auto; }
+      .toolbar { flex-direction:column; }
+      .search-wrap { min-width:0; width:100%; }
+      .toolbar button { width:100%; }
+      .actions button { flex:1 1 auto; }
+      .notice { font-size:.83rem; }
+    }
+    @media (max-width:380px) {
+      .stats { grid-template-columns:1fr; }
+      .stat { min-height:auto; }
+      .actions { flex-direction:column; }
+      .actions button { width:100%; }
+    }
+    @media print {
+      body { background:#fff; }
+      header { background:#fff; color:#000; padding:10px 0; box-shadow:none; }
+      header p, .eyebrow { color:#333; }
+      header::before, header::after, .brandmark { display:none; }
+      main { padding:10px 0; margin:0; }
+      .no-print, .actions, .row-actions, .notice { display:none !important; }
+      .panel,.stat { box-shadow:none; break-inside:avoid; }
+      .stats { grid-template-columns:repeat(2,1fr); }
+      table { min-width:0; }
+      th,td { padding:7px; font-size:10pt; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brandline">
+        <div class="brandmark" aria-hidden="true">OS</div>
+        <div>
+          <div class="eyebrow">Painel de acompanhamento</div>
+          <div style="font-weight:750; letter-spacing:.01em;">Controle de chamados</div>
+        </div>
+      </div>
+      <h1>Ordens de Serviço</h1>
+      <p>Organize seus chamados, registre os defeitos e acompanhe quando cada O.S. foi relatada.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="stats" aria-label="Resumo dos chamados">
+      <div class="stat"><div class="stat-icon" aria-hidden="true">▤</div><div><span class="label">Total de O.S. cadastradas</span><span class="value" id="totalOS">0</span></div></div>
+      <div class="stat"><div class="stat-icon" aria-hidden="true">♙</div><div><span class="label">Clientes diferentes</span><span class="value" id="totalClientes">0</span></div></div>
+    </section>
+
+    <section class="panel no-print">
+      <div class="section-heading">
+        <div class="heading-main">
+          <div class="section-icon" aria-hidden="true">＋</div>
+          <div>
+            <h2 id="formTitle">Registrar nova O.S.</h2>
+            <p class="section-subtitle">Preencha os dados principais do chamado.</p>
+          </div>
+        </div>
+      </div>
+      <form id="osForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="numero">Número da O.S. *</label>
+            <input id="numero" name="numero" required maxlength="60" placeholder="Ex.: 123456">
+          </div>
+          <div class="field">
+            <label for="cliente">Cliente *</label>
+            <input id="cliente" name="cliente" required maxlength="160" placeholder="Nome do cliente ou empresa">
+          </div>
+          <div class="field full">
+            <label for="defeito">Qual era o defeito? *</label>
+            <textarea id="defeito" name="defeito" required maxlength="3000" placeholder="Descreva o problema relatado no chamado"></textarea>
+          </div>
+        </div>
+        <p class="hint">A data e a hora do relato são registradas automaticamente ao salvar a O.S.</p>
+        <div class="actions">
+          <button class="primary" type="submit" id="saveBtn">Salvar O.S.</button>
+          <button class="secondary" type="button" id="cancelEdit" hidden>Cancelar edição</button>
+          <button class="secondary" type="reset" id="clearForm">Limpar campos</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div class="heading-main">
+          <div class="section-icon" aria-hidden="true">☷</div>
+          <div>
+            <h2>Chamados registrados</h2>
+            <p class="section-subtitle">Consulte, edite, exporte ou imprima seus registros.</p>
+          </div>
+        </div>
+      </div>
+      <div class="toolbar no-print">
+        <div class="search-wrap"><input id="busca" type="search" placeholder="Pesquisar por O.S., cliente ou defeito..." aria-label="Pesquisar chamados"></div>
+        <button class="secondary" type="button" id="exportar">Exportar CSV</button>
+        <button class="secondary" type="button" id="imprimir">Imprimir / Salvar PDF</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>O.S.</th><th>Cliente</th><th>Defeito relatado</th><th>Data e hora do relato</th><th class="no-print">Ações</th></tr>
+          </thead>
+          <tbody id="lista"></tbody>
+        </table>
+        <div class="empty" id="vazio">Nenhuma O.S. cadastrada ainda.</div>
+      </div>
+    </section>
+
+    <div class="notice">
+      <strong>Importante:</strong> os registros ficam salvos neste navegador e neste dispositivo. Eles não são enviados automaticamente para a internet nem sincronizados com outro computador. Use “Exportar CSV” para guardar uma cópia dos registros.
+    </div>
+    <footer>Controle local de O.S. • Data e hora conforme o relógio do dispositivo</footer>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+      const STORAGE_KEY = 'controle_os_v1';
+      const form = document.getElementById('osForm');
+      const numero = document.getElementById('numero');
+      const cliente = document.getElementById('cliente');
+      const defeito = document.getElementById('defeito');
+      const busca = document.getElementById('busca');
+      const lista = document.getElementById('lista');
+      const vazio = document.getElementById('vazio');
+      const totalOS = document.getElementById('totalOS');
+      const totalClientes = document.getElementById('totalClientes');
+      const saveBtn = document.getElementById('saveBtn');
+      const cancelEdit = document.getElementById('cancelEdit');
+      let registros = carregar();
+      let editandoId = null;
+
+      function carregar() {
+        try {
+          const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          return Array.isArray(data) ? data : [];
+        } catch (e) {
+          alert('Não foi possível ler os registros salvos neste navegador.');
+          return [];
+        }
+      }
+
+      function persistir() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+          return true;
+        } catch (e) {
+          alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio ou bloqueado. Exporte os dados e tente novamente.');
+          return false;
+        }
+      }
+
+      function dataHora(iso) {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return 'Data indisponível';
+        return new Intl.DateTimeFormat('pt-BR', {
+          day:'2-digit', month:'2-digit', year:'numeric',
+          hour:'2-digit', minute:'2-digit', second:'2-digit'
+        }).format(d);
+      }
+
+      function textoSeguro(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, c => ({
+          '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+        })[c]);
+      }
+
+      function renderizar() {
+        const termo = busca.value.trim().toLocaleLowerCase('pt-BR');
+        const filtrados = registros
+          .filter(r => [r.numero, r.cliente, r.defeito].some(v => String(v).toLocaleLowerCase('pt-BR').includes(termo)))
+          .sort((a,b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+
+        totalOS.textContent = registros.length;
+        const clientesUnicos = new Set(registros.map(r => String(r.cliente).trim().toLocaleLowerCase('pt-BR')).filter(Boolean));
+        totalClientes.textContent = clientesUnicos.size;
+        lista.innerHTML = '';
+
+        for (const r of filtrados) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="os">${textoSeguro(r.numero)}</td>
+            <td>${textoSeguro(r.cliente)}</td>
+            <td>${textoSeguro(r.defeito).replace(/\n/g, '<br>')}</td>
+            <td class="date">${textoSeguro(dataHora(r.criadoEm))}</td>
+            <td class="no-print"><div class="row-actions">
+              <button class="secondary" type="button" data-edit="${textoSeguro(r.id)}">Editar</button>
+              <button class="danger" type="button" data-delete="${textoSeguro(r.id)}">Excluir</button>
+            </div></td>`;
+          lista.appendChild(tr);
+        }
+        vazio.hidden = filtrados.length > 0;
+        vazio.textContent = termo && filtrados.length === 0 ? 'Nenhum chamado encontrado para essa pesquisa.' : 'Nenhuma O.S. cadastrada ainda.';
+      }
+
+      function limparEdicao() {
+        editandoId = null;
+        form.reset();
+        document.getElementById('formTitle').textContent = 'Registrar nova O.S.';
+        saveBtn.textContent = 'Salvar O.S.';
+        cancelEdit.hidden = true;
+      }
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const dados = {
+          numero: numero.value.trim(),
+          cliente: cliente.value.trim(),
+          defeito: defeito.value.trim()
+        };
+        if (!dados.numero || !dados.cliente || !dados.defeito) {
+          alert('Preencha o número da O.S., o cliente e o defeito.');
+          return;
+        }
+
+        if (editandoId !== null) {
+          const idx = registros.findIndex(r => r.id === editandoId);
+          if (idx < 0) { alert('Este registro não foi encontrado.'); limparEdicao(); return; }
+          registros[idx] = { ...registros[idx], ...dados };
+        } else {
+          registros.push({
+            id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2),
+            ...dados,
+            criadoEm: new Date().toISOString()
+          });
+        }
+        if (!persistir()) return;
+        limparEdicao();
+        renderizar();
+      });
+
+      lista.addEventListener('click', event => {
+        const editButton = event.target.closest('[data-edit]');
+        const deleteButton = event.target.closest('[data-delete]');
+        if (editButton) {
+          const r = registros.find(item => item.id === editButton.dataset.edit);
+          if (!r) return;
+          editandoId = r.id;
+          numero.value = r.numero;
+          cliente.value = r.cliente;
+          defeito.value = r.defeito;
+          document.getElementById('formTitle').textContent = 'Editar O.S.';
+          saveBtn.textContent = 'Salvar alterações';
+          cancelEdit.hidden = false;
+          window.scrollTo({ top:0, behavior:'smooth' });
+        }
+        if (deleteButton) {
+          const r = registros.find(item => item.id === deleteButton.dataset.delete);
+          if (!r) return;
+          if (!confirm(`Deseja realmente excluir a O.S. ${r.numero}? Esta ação não pode ser desfeita.`)) return;
+          const anterior = registros;
+          registros = registros.filter(item => item.id !== r.id);
+          if (!persistir()) { registros = anterior; return; }
+          if (editandoId === r.id) limparEdicao();
+          renderizar();
+        }
+      });
+
+      cancelEdit.addEventListener('click', limparEdicao);
+      document.getElementById('clearForm').addEventListener('click', () => {
+        if (editandoId !== null) limparEdicao();
+      });
+      busca.addEventListener('input', renderizar);
+      document.getElementById('imprimir').addEventListener('click', () => window.print());
+
+      document.getElementById('exportar').addEventListener('click', () => {
+        if (registros.length === 0) { alert('Não há registros para exportar.'); return; }
+        const colunas = ['Número da O.S.', 'Cliente', 'Defeito', 'Data e hora do relato'];
+        const linhas = registros
+          .slice()
+          .sort((a,b) => new Date(a.criadoEm) - new Date(b.criadoEm))
+          .map(r => [r.numero, r.cliente, r.defeito, dataHora(r.criadoEm)]);
+        const csv = [colunas, ...linhas].map(linha =>
+          linha.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(';')
+        ).join('\r\n');
+        const blob = new Blob(['\ufeff' + csv], { type:'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ordens_de_servico.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      renderizar();
+    })();
+  </script>
+</body>
+</html>
