@@ -117,7 +117,7 @@
     .search-wrap { flex:1; min-width:240px; position:relative; }
     .search-wrap::before { content:"⌕"; position:absolute; left:15px; top:7px; color:#8063a9; font-size:1.55rem; pointer-events:none; }
     .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
-    table { width:100%; border-collapse:collapse; min-width:760px; background:#fff; }
+    table { width:100%; border-collapse:collapse; min-width:900px; background:#fff; }
     th,td { text-align:left; padding:14px 13px; border-bottom:1px solid #eee7f7; vertical-align:top; }
     th { font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; color:#6f5b8b; background:#f7f2ff; font-weight:800; }
     td { font-size:.91rem; line-height:1.5; }
@@ -217,6 +217,10 @@
             <label for="cliente">Cliente *</label>
             <input id="cliente" name="cliente" required maxlength="160" placeholder="Nome do cliente ou empresa">
           </div>
+          <div class="field">
+            <label for="lider">Líder responsável pela abertura da O.S. *</label>
+            <input id="lider" name="lider" required maxlength="160" autocomplete="name" placeholder="Nome do líder responsável">
+          </div>
           <div class="field full">
             <label for="defeito">Qual era o defeito? *</label>
             <textarea id="defeito" name="defeito" required maxlength="3000" placeholder="Descreva o problema relatado no chamado"></textarea>
@@ -242,14 +246,14 @@
         </div>
       </div>
       <div class="toolbar no-print">
-        <div class="search-wrap"><input id="busca" type="search" placeholder="Pesquisar por O.S., cliente ou defeito..." aria-label="Pesquisar chamados"></div>
+        <div class="search-wrap"><input id="busca" type="search" placeholder="Pesquisar por O.S., cliente, líder ou defeito..." aria-label="Pesquisar chamados"></div>
         <button class="secondary" type="button" id="exportar">Exportar CSV</button>
         <button class="secondary" type="button" id="imprimir">Imprimir / Salvar PDF</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>O.S.</th><th>Cliente</th><th>Defeito relatado</th><th>Data e hora do relato</th><th class="no-print">Ações</th></tr>
+            <tr><th>O.S.</th><th>Cliente</th><th>Líder responsável</th><th>Defeito relatado</th><th>Data e hora do relato</th><th class="no-print">Ações</th></tr>
           </thead>
           <tbody id="lista"></tbody>
         </table>
@@ -270,6 +274,7 @@
       const form = document.getElementById('osForm');
       const numero = document.getElementById('numero');
       const cliente = document.getElementById('cliente');
+      const lider = document.getElementById('lider');
       const defeito = document.getElementById('defeito');
       const busca = document.getElementById('busca');
       const lista = document.getElementById('lista');
@@ -319,11 +324,11 @@
       function renderizar() {
         const termo = busca.value.trim().toLocaleLowerCase('pt-BR');
         const filtrados = registros
-          .filter(r => [r.numero, r.cliente, r.defeito].some(v => String(v).toLocaleLowerCase('pt-BR').includes(termo)))
+          .filter(r => [r.numero, r.cliente, r.lider, r.defeito].some(v => String(v ?? '').toLocaleLowerCase('pt-BR').includes(termo)))
           .sort((a,b) => new Date(b.criadoEm) - new Date(a.criadoEm));
 
         totalOS.textContent = registros.length;
-        const clientesUnicos = new Set(registros.map(r => String(r.cliente).trim().toLocaleLowerCase('pt-BR')).filter(Boolean));
+        const clientesUnicos = new Set(registros.map(r => String(r.cliente ?? '').trim().toLocaleLowerCase('pt-BR')).filter(Boolean));
         totalClientes.textContent = clientesUnicos.size;
         lista.innerHTML = '';
 
@@ -332,6 +337,7 @@
           tr.innerHTML = `
             <td class="os">${textoSeguro(r.numero)}</td>
             <td>${textoSeguro(r.cliente)}</td>
+            <td>${textoSeguro(r.lider || '')}</td>
             <td>${textoSeguro(r.defeito).replace(/\n/g, '<br>')}</td>
             <td class="date">${textoSeguro(dataHora(r.criadoEm))}</td>
             <td class="no-print"><div class="row-actions">
@@ -357,10 +363,11 @@
         const dados = {
           numero: numero.value.trim(),
           cliente: cliente.value.trim(),
+          lider: lider.value.trim(),
           defeito: defeito.value.trim()
         };
-        if (!dados.numero || !dados.cliente || !dados.defeito) {
-          alert('Preencha o número da O.S., o cliente e o defeito.');
+        if (!dados.numero || !dados.cliente || !dados.lider || !dados.defeito) {
+          alert('Preencha o número da O.S., o cliente, o líder responsável e o defeito.');
           return;
         }
 
@@ -387,9 +394,10 @@
           const r = registros.find(item => item.id === editButton.dataset.edit);
           if (!r) return;
           editandoId = r.id;
-          numero.value = r.numero;
-          cliente.value = r.cliente;
-          defeito.value = r.defeito;
+          numero.value = r.numero ?? '';
+          cliente.value = r.cliente ?? '';
+          lider.value = r.lider ?? '';
+          defeito.value = r.defeito ?? '';
           document.getElementById('formTitle').textContent = 'Editar O.S.';
           saveBtn.textContent = 'Salvar alterações';
           cancelEdit.hidden = false;
@@ -416,11 +424,11 @@
 
       document.getElementById('exportar').addEventListener('click', () => {
         if (registros.length === 0) { alert('Não há registros para exportar.'); return; }
-        const colunas = ['Número da O.S.', 'Cliente', 'Defeito', 'Data e hora do relato'];
+        const colunas = ['Número da O.S.', 'Cliente', 'Líder responsável', 'Defeito', 'Data e hora do relato'];
         const linhas = registros
           .slice()
           .sort((a,b) => new Date(a.criadoEm) - new Date(b.criadoEm))
-          .map(r => [r.numero, r.cliente, r.defeito, dataHora(r.criadoEm)]);
+          .map(r => [r.numero, r.cliente, r.lider || '', r.defeito, dataHora(r.criadoEm)]);
         const csv = [colunas, ...linhas].map(linha =>
           linha.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(';')
         ).join('\r\n');
