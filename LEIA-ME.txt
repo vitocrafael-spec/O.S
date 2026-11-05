@@ -1,0 +1,26 @@
+CONTROLE DE ORDENS DE SERVIÇO — VERSÃO INSTALÁVEL (PWA)
+
+CONTEÚDO
+- index.html: seu sistema original com suporte à instalação.
+- manifest.webmanifest: nome, aparência e ícones do aplicativo.
+- sw.js: cache dos arquivos para permitir abrir a interface offline.
+- icons/: ícones 192x192 e 512x512.
+
+COMO PUBLICAR/USAR
+1. Envie TODOS os arquivos e pastas mantendo esta estrutura para uma hospedagem HTTPS.
+2. Abra o endereço HTTPS no Google Chrome (não abra o index.html por duplo clique).
+3. O Chrome poderá mostrar o ícone/opção de instalação na barra de endereço ou no menu.
+4. Se o botão "Instalar aplicativo" aparecer dentro do sistema, clique nele e confirme.
+5. Depois da instalação, o aplicativo poderá ser aberto pelo atalho criado pelo Chrome.
+
+IMPORTANTE SOBRE OS DADOS
+O sistema original salva registros no localStorage do navegador. Esta versão mantém esse comportamento.
+Os dados não são sincronizados entre computadores e não existe banco de dados/servidor nesta versão.
+Faça exportações CSV regulares. Limpar os dados do navegador ou usar outro perfil/dispositivo pode
+fazer os registros não aparecerem.
+
+SEGURANÇA E LIMITAÇÕES
+- A instalação PWA exige HTTPS (ou localhost para testes).
+- O cache offline guarda a interface; não transforma os dados locais em dados compartilhados.
+- O service worker pode manter arquivos em cache. Para publicar atualizações futuras, aumente
+  CACHE_NAME em sw.js (por exemplo, controle-os-pwa-v2).
