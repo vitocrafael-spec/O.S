@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#5420a8">
+  <meta name="description" content="Controle e acompanhamento de ordens de serviço.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <title>Controle de Ordens de Serviço</title>
   <style>
     :root {
@@ -134,6 +139,9 @@
       display:flex; align-items:flex-start; gap:10px;
     }
     .notice::before { content:"ⓘ"; font-size:1.05rem; color:var(--primary); font-weight:800; }
+    .install-app { margin-top:16px; background:#fff; color:#4b198f; border:1px solid rgba(255,255,255,.55); box-shadow:0 5px 13px rgba(0,0,0,.12); }
+    .install-app:hover { background:#f2ecfc; }
+    .install-app[hidden] { display:none; }
     footer { color:#8a7a9f; font-size:.8rem; text-align:center; padding:22px 0 0; }
     @media (max-width:700px) {
       header { padding:25px 18px 37px; }
@@ -187,6 +195,7 @@
         </div>
       </div>
       <h1>Ordens de Serviço</h1>
+      <button class="install-app no-print" id="installApp" type="button" hidden>＋ Instalar aplicativo</button>
       <p>Organize seus chamados, registre os defeitos e acompanhe quando cada O.S. foi relatada.</p>
     </div>
   </header>
@@ -442,6 +451,33 @@
         a.remove();
         URL.revokeObjectURL(url);
       });
+
+      // Instalação PWA: o Chrome só libera o prompt em contexto seguro (HTTPS ou localhost).
+      let eventoInstalacao = null;
+      const botaoInstalar = document.getElementById("installApp");
+      window.addEventListener("beforeinstallprompt", event => {
+        event.preventDefault();
+        eventoInstalacao = event;
+        botaoInstalar.hidden = false;
+      });
+      botaoInstalar.addEventListener("click", async () => {
+        if (!eventoInstalacao) return;
+        eventoInstalacao.prompt();
+        await eventoInstalacao.userChoice;
+        eventoInstalacao = null;
+        botaoInstalar.hidden = true;
+      });
+      window.addEventListener("appinstalled", () => {
+        botaoInstalar.hidden = true;
+        eventoInstalacao = null;
+      });
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(error => {
+            console.error("Não foi possível registrar o modo offline:", error);
+          });
+        });
+      }
 
       renderizar();
     })();
